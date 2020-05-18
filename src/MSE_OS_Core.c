@@ -27,6 +27,6 @@ void os_InitTarea(void *tarea, uint32_t *stack_tarea, uint32_t *stack_pointer)  
 	stack_tarea[STACK_SIZE/4 - XPSR] = INIT_XPSR;								//necesari para bit thumb
 	stack_tarea[STACK_SIZE/4 - PC_REG] = (uint32_t)tarea;		//direccion de la tarea (ENTRY_POINT)
 
-	*stack_pointer = (uint32_t) (stack_tarea + STACK_SIZE/4 - STACK_FRAME_SIZE);
+	*stack_pointer = (uint32_t) (stack_tarea + STACK_SIZE/4 - FULL_REG_STACKING_SIZE);
 
 }

@@ -33,6 +33,14 @@
 #define R2			6
 #define R1			7
 #define R0			8
+#define R4			9
+#define R5			10
+#define R6			11
+#define R7			12
+#define R8			13
+#define R9			14
+#define R10 		15
+#define R11 		16
 
 //----------------------------------------------------------------------------------
 
@@ -50,7 +58,8 @@
 /************************************************************************************
  * 						Definiciones varias
  ***********************************************************************************/
-#define STACK_FRAME_SIZE	8
+#define STACK_FRAME_SIZE	        8
+#define FULL_REG_STACKING_SIZE 		16	//16 core registers
 
 
 /*==================[definicion de prototipos]=================================*/

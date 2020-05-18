@@ -19,8 +19,8 @@
 			--> http://infocenter.arm.com/help/index.jsp?topic=/com.arm.doc.dui0175m/Cbhifdhe.html
 	*/
 	.data
-		estado: .word 0					//Variable necesaria para seguimiento de siguiente tarea;
-		.extern sp_tarea1,sp_tarea2		//Variables donde se guardan los stack pointers
+		estado: .word 0								//Variable necesaria para seguimiento de siguiente tarea;
+		.extern sp_tarea1, sp_tarea2, sp_tarea3		//Variables donde se guardan los stack pointers
 
 
 	/*
@@ -44,6 +44,8 @@ tabla:							//construccion de un switch-case en asm
 	.byte (case0-tabla)/2
 	.byte (case1-tabla)/2
 	.byte (case2-tabla)/2
+	.byte (case3-tabla)/2
+	.byte (case_dummy-tabla)/2	// just to align memory
 	.byte (case_end-tabla)/2
 
 
@@ -57,6 +59,8 @@ case0:
 	ldr r0,=sp_tarea1		//R0 = &sp_tarea1
 	ldr r1,[r0]				//R1 = *R0
 	msr msp,r1				//MSP = R1 ==> MSP = sp_tarea1
+
+	pop {R4-R11}
 	//break;
 	b case_end
 
@@ -66,6 +70,8 @@ case1:
 	mov r1,2
 	str r1,[r0]		//estado = 2
 
+	push {r4-r11}			//guardamos en el stack los registros restantes
+
 	ldr r0,=sp_tarea1		//R0 = &sp_tarea1
 	mrs r1,msp				//R1 = MSP
 	str r1,[r0]				//*R0 = R1 ==> sp_tarea1 = MSP
@@ -73,22 +79,58 @@ case1:
 	ldr r0,=sp_tarea2		//R0 = &sp_tarea2
 	ldr r1,[r0]				//R1 = *R0
 	msr msp,r1				//MSP = R1 ==> MSP = sp_tarea1
+
+	pop {r4-r11}			//devolvemos a los registros los valores guardados en el stack
+
 	//break;
 	b case_end
 
 
-/****** Si se expropio el CPU a la tarea2 (estado == 2), debemos cargar en MSP el contenido de sp_tarea1 ****/
+/****** Si se expropio el CPU a la tarea2 (estado == 2), debemos cargar en MSP el contenido de sp_tarea3 ****/
 case2:
-	mov r1,1
-	str r1,[r0]		//estado = 1
+	mov r1,3
+	str r1,[r0]		//estado = 3
+
+	push {r4-r11}			//guardamos en el stack los registros restantes
 
 	ldr r0,=sp_tarea2		//R0 = &sp_tarea2
 	mrs r1,msp				//R1 = MSP
 	str r1,[r0]				//*R0 = R1 ==> sp_tarea2 = MSP
 
+	ldr r0,=sp_tarea3		//R0 = &sp_tarea3
+	ldr r1,[r0]				//R1 = *R0
+	msr msp,r1				//MSP = R1 ==> MSP = sp_tarea3
+
+	pop {r4-r11}			//devolvemos a los registros los valores guardados en el stack
+
+	//break;
+	b case_end
+
+
+/****** Si se expropio el CPU a la tarea3 (estado == 3), debemos cargar en MSP el contenido de sp_tarea1 ****/
+case3:
+	mov r1,1
+	str r1,[r0]		//estado = 1
+
+	push {r4-r11}			//guardamos en el stack los registros restantes
+
+	ldr r0,=sp_tarea3		//R0 = &sp_tarea3
+	mrs r1,msp				//R1 = MSP
+	str r1,[r0]				//*R0 = R1 ==> sp_tarea3 = MSP
+
 	ldr r0,=sp_tarea1		//R0 = &sp_tarea1
 	ldr r1,[r0]				//R1 = *R0
 	msr msp,r1				//MSP = R1 ==> MSP = sp_tarea1
+	
+	pop {r4-r11}			//devolvemos a los registros los valores guardados en el stack
+
+	//break;
+	b case_end
+
+// do nothing
+case_dummy:
+	//break;
+	b case_end
 
 case_end:
 	bx lr			//Branch indirecto, se carga en PC lo que hay el LR (EXEC_RETURN)
