@@ -42,21 +42,21 @@ static void initHardware(void)  {
 
 /*==================[Definicion de tareas para el OS]==========================*/
 void tarea1(void)  {
-	int i;
+	int i = 0;
 	while (1) {
 		i++;
 	}
 }
 
 void tarea2(void)  {
-	int j;
+	int j = 0;
 	while (1) {
 		j++;
 	}
 }
 
 void tarea3(void)  {
-	int k;
+	int k = 0;
 	while (1) {
 		k++;
 	}
@@ -67,6 +67,8 @@ void tarea3(void)  {
 int main(void)  {
 
 	initHardware();
+
+	os_Init();
 
 	os_InitTarea(tarea1, stack1, &sp_tarea1);
 	os_InitTarea(tarea2, stack2, &sp_tarea2);

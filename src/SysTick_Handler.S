@@ -1,3 +1,9 @@
+/* 	
+	THIS FILE IS NO LONGER USED
+	KEEPING IT HERE FOR FUTURE REFERENCE ONLY.
+*/
+	
+	
 	/*
 		.syntax unified
 
@@ -8,7 +14,7 @@
 	*/
 
 	.syntax unified
-	.global SysTick_Handler
+	//.global SysTick_Handler
 
 
 
@@ -36,7 +42,7 @@
 
 
 
-SysTick_Handler:
+SysTick_Handler_old:
 	ldr r0, =estado		// r0 = &state
 	ldr r1, [r0]		//r1 = *r0
 	tbb [pc,r1]
