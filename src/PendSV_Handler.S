@@ -43,7 +43,7 @@ PendSV_Handler:
 	*/
 	push {r4-r11,lr}
 	mrs r0,msp
-	bl getContextoSiguiente
+	bl get_next_context
 	msr msp,r0
 	pop {r4-r11,lr}			//Recuperados todos los valores de registros
 	bx lr					//se hace un branch indirect con el valor de LR que es nuevamente EXEC_RETURN

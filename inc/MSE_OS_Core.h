@@ -1,12 +1,12 @@
 /*
  * MSE_OS_Core.h
  *
- *  Created on: 26 mar. 2020
- *      Author: gonza
+ *  Created on: 2020
+ *      Author: mbrignone
  */
 
-#ifndef ISO_I_2020_MSE_OS_INC_MSE_OS_CORE_H_
-#define ISO_I_2020_MSE_OS_INC_MSE_OS_CORE_H_
+#ifndef __MSE_OS_CORE_H__
+#define __MSE_OS_CORE_H__
 
 #include <stdint.h>
 #include "board.h"
@@ -63,14 +63,52 @@
 #define STACK_FRAME_SIZE	        8
 #define FULL_STACKING_SIZE 			17	//16 core registers + valor previo de LR
 
+#define OS_MAX_TASK                 8
+
+
+/*==================[definicion de datos para el OS]=================================*/
+
+typedef enum    {
+    OS_TASK_READY,
+    OS_TASK_RUNNING,
+} os_task_state;
+
+typedef enum    {
+    OS_STATE_NORMAL,
+    OS_STATE_RESET,
+} os_state;
+
+typedef enum    {
+    OS_OK               = 0,
+    OS_ERROR_MAX_TASK   = 255,
+} os_error;
+
+typedef struct  {
+    uint32_t        stack[STACK_SIZE/4];
+    uint32_t        stack_pointer;
+    void*           entry_point;
+    uint8_t         id;
+    os_task_state   state;
+} os_task;
+
+typedef struct  {
+    void*       task_list[OS_MAX_TASK];
+    uint8_t     number_of_tasks;
+    os_error    last_error;
+    os_state    state;
+    os_task*    current_task;
+    os_task*    next_task;
+} os_control;
+
+
 
 /*==================[definicion de prototipos]=================================*/
 
-void os_InitTarea(void *tarea, uint32_t *stack, uint32_t *stack_pointer);
+os_error os_init_task(void* entry_point, os_task* task);
 
-void os_Init(void);
-
-
+void os_init(void);
 
 
-#endif /* ISO_I_2020_MSE_OS_INC_MSE_OS_CORE_H_ */
+
+
+#endif  // __MSE_OS_CORE_H__
