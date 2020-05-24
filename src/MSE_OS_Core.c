@@ -98,16 +98,8 @@ static void scheduler(void)  {
 		os_controller.current_task = (os_task*) os_controller.task_list[0];
 	}
 	else	{
-
 		index = (os_controller.current_task->id + 1) % os_controller.number_of_tasks;
 		os_controller.next_task = (os_task*) os_controller.task_list[index];
-
-		// if(index < os_controller.number_of_tasks)  {
-		// 	os_controller.next_task = (os_task*) os_controller.task_list[index];
-		// }
-		// else  {
-		// 	os_controller.next_task = (os_task*) os_controller.task_list[0];
-		// }
 	}
 
 }
