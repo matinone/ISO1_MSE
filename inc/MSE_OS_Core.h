@@ -13,7 +13,7 @@
 
 
 /************************************************************************************
- * 			Tamaño del stack predefinido para cada tarea expresado en bytes
+ *          Tamaño del stack predefinido para cada tarea expresado en bytes
  ***********************************************************************************/
 
 #define STACK_SIZE 256
@@ -23,45 +23,45 @@
 
 
 /************************************************************************************
- * 	Posiciones dentro del stack frame de los registros que conforman el stack frame
+ *  Posiciones dentro del stack frame de los registros que conforman el stack frame
  ***********************************************************************************/
 
-#define XPSR		    1
-#define PC_REG			2
-#define LR				3
-#define R12				4
-#define R3				5
-#define R2				6
-#define R1				7
-#define R0				8
-#define LR_PREV_VALUE	9
-#define R4				10
-#define R5				11
-#define R6				12
-#define R7				13
-#define R8				14
-#define R9				15
-#define R10 			16
-#define R11 			17
+#define XPSR            1
+#define PC_REG          2
+#define LR              3
+#define R12             4
+#define R3              5
+#define R2              6
+#define R1              7
+#define R0              8
+#define LR_PREV_VALUE   9
+#define R4              10
+#define R5              11
+#define R6              12
+#define R7              13
+#define R8              14
+#define R9              15
+#define R10             16
+#define R11             17
 
 //----------------------------------------------------------------------------------
 
 
 /************************************************************************************
- * 			Valores necesarios para registros del stack frame inicial
+ *              Valores necesarios para registros del stack frame inicial
  ***********************************************************************************/
 
-#define INIT_XPSR 	1 << 24				//xPSR.T = 1
-#define EXEC_RETURN	0xFFFFFFF9			//retornar a modo thread con MSP, FPU no utilizada
+#define INIT_XPSR   1 << 24             //xPSR.T = 1
+#define EXEC_RETURN	0xFFFFFFF9          //retornar a modo thread con MSP, FPU no utilizada
 
 //----------------------------------------------------------------------------------
 
 
 /************************************************************************************
- * 						Definiciones varias
+ *                          Definiciones varias
  ***********************************************************************************/
-#define STACK_FRAME_SIZE	        8
-#define FULL_STACKING_SIZE 			17	//16 core registers + valor previo de LR
+#define STACK_FRAME_SIZE            8
+#define FULL_STACKING_SIZE          17	//16 core registers + valor previo de LR
 
 #define OS_MAX_TASK                 8
 
