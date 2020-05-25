@@ -35,16 +35,18 @@ static void initHardware(void)  {
 
 
 /*==================[Definicion de tareas para el OS]==========================*/
-void task_1(void)  {
+void task_1(void* task_param)  {
 	uint32_t i = 0;
 	uint32_t j = 0;
+
+	uint32_t increment = (uint32_t)task_param;
 	while (1) {
-		i++;
+		i = i + increment;
 		j++;
 	}
 }
 
-void task_2(void)  {
+void task_2(void* task_param)  {
 	uint32_t k = 0;
 	uint32_t l = 0;
 	while (1) {
@@ -53,12 +55,14 @@ void task_2(void)  {
 	}
 }
 
-void task_3(void)  {
+void task_3(void* task_param)  {
 	uint32_t m = 0;
 	uint32_t n = 0;
+	float f = 0.0;
 	while (1) {
 		m++;
 		n++;
+		f = f + 1.5;
 	}
 }
 
@@ -68,10 +72,9 @@ int main(void)  {
 
 	initHardware();
 
-
-	os_init_task(task_1, &instance_os_task_1);
-	os_init_task(task_2, &instance_os_task_2);
-	os_init_task(task_3, &instance_os_task_3);
+	os_init_task(task_1, &instance_os_task_1, (void*)5);
+	os_init_task(task_2, &instance_os_task_2, NULL);
+	os_init_task(task_3, &instance_os_task_3, NULL);
 
 	os_init();
 

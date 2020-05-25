@@ -20,14 +20,15 @@ static os_control os_controller;
      *   Es necesario llamar a esta funcion para cada tarea antes que inicie
      *   el OS.
 ***************************************************************************************************/
-os_error os_init_task(void* entry_point, os_task* task)	{
+os_error os_init_task(void* entry_point, os_task* task, void* task_param)	{
 
 	static uint8_t id = 0;
 
 	if (os_controller.number_of_tasks < OS_MAX_TASK)	{
 
-		task->stack[STACK_SIZE/4 - XPSR] = INIT_XPSR;					//necesario para bit thumb
-		task->stack[STACK_SIZE/4 - PC_REG] = (uint32_t)entry_point;		//direccion de la tarea (ENTRY_POINT)
+		task->stack[STACK_SIZE/4 - XPSR] 	= INIT_XPSR;					//necesario para bit thumb
+		task->stack[STACK_SIZE/4 - PC_REG] 	= (uint32_t)entry_point;		//direccion de la tarea (ENTRY_POINT)
+		task->stack[STACK_SIZE/4 - R0] 		= (uint32_t)task_param;			//parametro de la tarea
 
 		task->stack[STACK_SIZE/4 - LR_PREV_VALUE] = EXEC_RETURN;
 		task->stack_pointer = (uint32_t) (task->stack + STACK_SIZE/4 - FULL_STACKING_SIZE);

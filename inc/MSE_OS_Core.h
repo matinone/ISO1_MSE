@@ -104,7 +104,7 @@ typedef struct  {
 
 /*==================[definicion de prototipos]=================================*/
 
-os_error os_init_task(void* entry_point, os_task* task);
+os_error os_init_task(void* entry_point, os_task* task, void* task_param);
 
 void os_init(void);
 
