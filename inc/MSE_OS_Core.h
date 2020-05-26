@@ -108,6 +108,7 @@ os_error os_init_task(void* entry_point, os_task* task, void* task_param);
 
 void os_init(void);
 
+os_error os_get_last_error(void);
 
 
 
