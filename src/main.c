@@ -9,9 +9,9 @@
 
 /*==================[macros and definitions]=================================*/
 
-#define MILISEC		1000
+#define MILISEC     1000
 
-/*==================[Global data declaration]==============================*/
+/*==================[global data declaration]==============================*/
 
 os_task instance_os_task_1, instance_os_task_2, instance_os_task_3;
 
@@ -24,17 +24,16 @@ os_task instance_os_task_1, instance_os_task_2, instance_os_task_3;
 
 /*==================[internal functions definition]==========================*/
 
-/** @brief hardware initialization function
- *	@return none
- */
+
 static void initHardware(void)  {
     Board_Init();
     SystemCoreClockUpdate();
-    SysTick_Config(SystemCoreClock / MILISEC);		//systick 1ms
+    SysTick_Config(SystemCoreClock / MILISEC);      // systick 1ms
 }
 
 
-/*==================[Definicion de tareas para el OS]==========================*/
+/*============================================================================*/
+
 void task_1(void* task_param)  {
     uint32_t i = 0;
     uint32_t j = 0;
@@ -83,6 +82,5 @@ int main(void)  {
     }
 }
 
-/** @} doxygen end group definition */
 
 /*==================[end of file]============================================*/

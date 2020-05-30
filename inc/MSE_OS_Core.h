@@ -12,20 +12,11 @@
 #include "board.h"
 
 
-/************************************************************************************
- *          Tamaño del stack predefinido para cada tarea expresado en bytes
- ***********************************************************************************/
-
-#define STACK_SIZE 256
+#define STACK_SIZE 256  // predefined task stack size (in bytes)
 
 //----------------------------------------------------------------------------------
 
-
-
-/************************************************************************************
- *  Posiciones dentro del stack frame de los registros que conforman el stack frame
- ***********************************************************************************/
-
+// positions inside the stack frame for each of the stack frame registers
 #define XPSR            1
 #define PC_REG          2
 #define LR              3
@@ -46,27 +37,18 @@
 
 //----------------------------------------------------------------------------------
 
-
-/************************************************************************************
- *              Valores necesarios para registros del stack frame inicial
- ***********************************************************************************/
-
-#define INIT_XPSR   1 << 24             //xPSR.T = 1
-#define EXEC_RETURN	0xFFFFFFF9          //retornar a modo thread con MSP, FPU no utilizada
+// initial values for stack frame registers
+#define INIT_XPSR   1 << 24             // xPSR.T = 1
+#define EXEC_RETURN	0xFFFFFFF9          // return to thread mode with MSP, FPU unused
 
 //----------------------------------------------------------------------------------
 
-
-/************************************************************************************
- *                          Definiciones varias
- ***********************************************************************************/
 #define STACK_FRAME_SIZE            8
-#define FULL_STACKING_SIZE          17	//16 core registers + valor previo de LR
+#define FULL_STACKING_SIZE          17	// 16 core registers + LR previous value
 
 #define OS_MAX_TASK                 8
 
-
-/*==================[definicion de datos para el OS]=================================*/
+//----------------------------------------------------------------------------------
 
 typedef enum    {
     OS_TASK_READY,
@@ -102,15 +84,13 @@ typedef struct  {
 } os_control;
 
 
-
-/*==================[definicion de prototipos]=================================*/
+//----------------------------------------------------------------------------------
 
 os_error os_init_task(void* entry_point, os_task* task, void* task_param);
 
 void os_init(void);
 
 os_error os_get_last_error(void);
-
 
 
 #endif  // __MSE_OS_CORE_H__

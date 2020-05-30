@@ -11,8 +11,18 @@
 
 static os_task idle_task_instance;
 
+
+/*************************************************************************************************
+     *  @brief Inicializa idle task.
+     *
+***************************************************************************************************/
 void os_init_idle_task();
 
+
+/*************************************************************************************************
+     *  @brief Idle task.
+     *
+***************************************************************************************************/
 void __attribute__((weak)) idle_task(void* task_param)  {
     while(1)    {
         __WFI();
@@ -24,13 +34,6 @@ void __attribute__((weak)) idle_task(void* task_param)  {
 /*************************************************************************************************
      *  @brief Hook de retorno de tareas
      *
-     *  @details
-     *   Esta funcion no deberia accederse bajo ningun concepto, porque ninguna tarea del OS
-     *   debe retornar. Si lo hace, es un comportamiento anormal y debe ser tratado.
-     *
-     *  @param  none
-     *
-     *  @return none.
 ***************************************************************************************************/
 void __attribute__((weak)) os_return_hook(void)  {
     while(1);
@@ -41,19 +44,6 @@ void __attribute__((weak)) os_return_hook(void)  {
 /*************************************************************************************************
      *  @brief Hook de tick de sistema
      *
-     *  @details
-     *   Se ejecuta cada vez que se produce un tick de sistema. Es llamada desde el handler de
-     *   SysTick.
-     *
-     *  @param none
-     *
-     *  @return none.
-     *
-     *  @warning    Esta funcion debe ser lo mas corta posible porque se ejecuta dentro del handler
-     *              mencionado, por lo que tiene prioridad sobre el cambio de contexto y otras IRQ.
-     *
-     *  @warning    Esta funcion no debe bajo ninguna circunstancia utilizar APIs del OS dado
-     *              que podria dar lugar a un nuevo scheduling.
 ***************************************************************************************************/
 void __attribute__((weak)) os_tick_hook(void)  {
     __asm volatile( "nop" );
@@ -64,16 +54,6 @@ void __attribute__((weak)) os_tick_hook(void)  {
 /*************************************************************************************************
      *  @brief Hook de error de sistema
      *
-     *  @details
-     *   Esta funcion es llamada en caso de error del sistema, y puede ser utilizada a fin de hacer
-     *   debug. El puntero de la funcion que llama a error_hook es pasado como parametro para tener
-     *   informacion de quien la esta llamando, y dentro de ella puede verse el codigo de error
-     *   en la estructura de control de sistema.
-     *
-     *  @param caller       Puntero a la funcion donde fue llamado error_hook. Implementado solo a
-     *                      fines de trazabilidad de errores
-     *
-     *  @return none.
 ***************************************************************************************************/
 void __attribute__((weak)) error_hook(void *caller)  {
     // while(1);
@@ -86,12 +66,8 @@ void __attribute__((weak)) error_hook(void *caller)  {
 static os_control os_controller;
 
 /*************************************************************************************************
-     *  @brief Inicializa las tareas que correran en el OS.
+     *  @brief Inicializa las tareas del OS.
      *
-     *  @details
-     *   Inicializa una tarea para que pueda correr en el OS implementado.
-     *   Es necesario llamar a esta funcion para cada tarea antes que inicie
-     *   el OS.
 ***************************************************************************************************/
 os_error os_init_task(void* entry_point, os_task* task, void* task_param)	{
 
@@ -99,11 +75,11 @@ os_error os_init_task(void* entry_point, os_task* task, void* task_param)	{
 
     if (os_controller.number_of_tasks < OS_MAX_TASK)	{
 
-        task->stack[STACK_SIZE/4 - XPSR]    = INIT_XPSR;                    //necesario para bit thumb
-        task->stack[STACK_SIZE/4 - PC_REG]  = (uint32_t)entry_point;        //direccion de la tarea (ENTRY_POINT)
-        task->stack[STACK_SIZE/4 - LR]      = (uint32_t)os_return_hook;     //Retorno de la tarea (no deberia darse)
+        task->stack[STACK_SIZE/4 - XPSR]    = INIT_XPSR;                    // required for bit thumb
+        task->stack[STACK_SIZE/4 - PC_REG]  = (uint32_t)entry_point;        // pointer to the task (entry point)
+        task->stack[STACK_SIZE/4 - LR]      = (uint32_t)os_return_hook;     // task return (should never happen)
 
-        task->stack[STACK_SIZE/4 - R0]      = (uint32_t)task_param;         //parametro de la tarea
+        task->stack[STACK_SIZE/4 - R0]      = (uint32_t)task_param;         // task parameter
 
         task->stack[STACK_SIZE/4 - LR_PREV_VALUE] = EXEC_RETURN;
         task->stack_pointer = (uint32_t) (task->stack + STACK_SIZE/4 - FULL_STACKING_SIZE);
@@ -121,7 +97,7 @@ os_error os_init_task(void* entry_point, os_task* task, void* task_param)	{
     }
 
     else    {
-        os_controller.last_error = OS_ERROR_MAX_TASK;       //excedimos la cantidad de tareas posibles
+        os_controller.last_error = OS_ERROR_MAX_TASK;   // reached the maximum number of tasks
         error_hook(os_init_task);
         return OS_ERROR_MAX_TASK;
     }
@@ -132,13 +108,6 @@ os_error os_init_task(void* entry_point, os_task* task, void* task_param)	{
 /*************************************************************************************************
      *  @brief Inicializa el OS.
      *
-     *  @details
-     *   Inicializa el OS seteando la prioridad de PendSV como la mas baja posible. Es necesario
-     *   llamar esta funcion antes de que inicie el sistema. Es mandatorio llamarla luego de
-     *   inicializar las tareas
-     *
-     *  @param      None.
-     *  @return     None.
 ***************************************************************************************************/
 void os_init(void)  {
 
@@ -159,6 +128,11 @@ void os_init(void)  {
 }
 
 
+/*************************************************************************************************
+     *  @brief Funcion del sistema operativo para obtener el último
+     *  error ocurrido.
+     *
+***************************************************************************************************/
 os_error os_get_last_error(void)    {
     return os_controller.last_error;
 }
@@ -168,11 +142,6 @@ os_error os_get_last_error(void)    {
 /*************************************************************************************************
      *  @brief Funcion que efectua las decisiones de scheduling.
      *
-     *  @details
-     *   Round-Robin scheduling.
-     *
-     *  @param      None.
-     *  @return     None.
 ***************************************************************************************************/
 static void scheduler(void)  {
     uint8_t index;
@@ -216,32 +185,20 @@ static void scheduler(void)  {
 /*************************************************************************************************
      *  @brief SysTick Handler.
      *
-     *  @details
-     *   En este handler se llama al scheduler y luego de determinarse cual es la tarea siguiente
-     *   a ejecutar, se setea como pendiente la excepcion PendSV.
-     *
-     *  @param      None.
-     *  @return     None.
 ***************************************************************************************************/
 void SysTick_Handler(void)  {
 
     scheduler();
 
-    /**
-     * Se setea el bit correspondiente a la excepcion PendSV
-     */
+    // set the corresponding bit for PendSV exception
     SCB->ICSR = SCB_ICSR_PENDSVSET_Msk;
 
-    /**
-     * Instruction Synchronization Barrier; flushes the pipeline and ensures that
-     * all previous instructions are completed before executing new instructions
-     */
+    // Instruction Synchronization Barrier: flushes the pipeline and ensures that
+    // all previous instructions are completed before executing new instructions
     __ISB();
 
-    /**
-     * Data Synchronization Barrier; ensures that all memory accesses are
-     * completed before next instruction is executed
-     */
+    // Data Synchronization Barrier: ensures that all memory accesses are
+    // completed before next instruction is executed
     __DSB();
 
     os_tick_hook();
@@ -253,13 +210,6 @@ void SysTick_Handler(void)  {
 /*************************************************************************************************
      *  @brief Funcion para determinar el proximo contexto.
      *
-     *  @details
-     *   Esta funcion obtiene el siguiente contexto a ser cargado. El cambio de contexto se
-     *   ejecuta en el handler de PendSV, dentro del cual se llama a esta funcion.
-     *
-     *  @param      current_stack_pointer	Este valor es una copia del contenido de MSP al momento en
-     *              que la funcion es invocada.
-     *  @return     El valor a cargar en MSP para apuntar al contexto de la tarea siguiente.
 ***************************************************************************************************/
 uint32_t get_next_context(uint32_t current_stack_pointer)  {
     uint32_t next_stack_pointer;
@@ -294,11 +244,11 @@ uint32_t get_next_context(uint32_t current_stack_pointer)  {
 ***************************************************************************************************/
 void os_init_idle_task()    {
 
-    idle_task_instance.stack[STACK_SIZE/4 - XPSR]    = INIT_XPSR;                    //necesario para bit thumb
-    idle_task_instance.stack[STACK_SIZE/4 - PC_REG]  = (uint32_t)idle_task;          //direccion de la tarea (ENTRY_POINT)
-    idle_task_instance.stack[STACK_SIZE/4 - LR]      = (uint32_t)os_return_hook;     //Retorno de la tarea (no deberia darse)
+    idle_task_instance.stack[STACK_SIZE/4 - XPSR]    = INIT_XPSR;                    // required for bit thumb
+    idle_task_instance.stack[STACK_SIZE/4 - PC_REG]  = (uint32_t)idle_task;          // pointer to the task (entry point)
+    idle_task_instance.stack[STACK_SIZE/4 - LR]      = (uint32_t)os_return_hook;     // task return (should never happen)
 
-    idle_task_instance.stack[STACK_SIZE/4 - R0]      = (uint32_t)NULL;               //parametro de la tarea
+    idle_task_instance.stack[STACK_SIZE/4 - R0]      = (uint32_t)NULL;               // task parameter
 
     idle_task_instance.stack[STACK_SIZE/4 - LR_PREV_VALUE] = EXEC_RETURN;
     idle_task_instance.stack_pointer = (uint32_t)(idle_task_instance.stack + STACK_SIZE/4 - FULL_STACKING_SIZE);
