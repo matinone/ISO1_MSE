@@ -7,12 +7,19 @@
 
 #include "MSE_OS_Core.h"
 
+#define IDLE_TASK_ID    0xFF
 
-/*==================[definicion de hooks debiles]=================================*/
+static os_task idle_task_instance;
 
-/*
- * El usuario del OS puede redefinir los hooks dentro de su codigo.
- */
+void os_init_idle_task();
+
+void __attribute__((weak)) idle_task(void* task_param)  {
+    while(1)    {
+        __WFI();
+    }
+}
+
+
 
 /*************************************************************************************************
      *  @brief Hook de retorno de tareas
@@ -61,9 +68,7 @@ void __attribute__((weak)) os_tick_hook(void)  {
      *   Esta funcion es llamada en caso de error del sistema, y puede ser utilizada a fin de hacer
      *   debug. El puntero de la funcion que llama a error_hook es pasado como parametro para tener
      *   informacion de quien la esta llamando, y dentro de ella puede verse el codigo de error
-     *   en la estructura de control de sistema. Si ha de implementarse por el usuario para manejo
-     *   de errores, es importante tener en cuenta que la estructura de control solo esta disponible
-     *   dentro de este archivo.
+     *   en la estructura de control de sistema.
      *
      *  @param caller       Puntero a la funcion donde fue llamado error_hook. Implementado solo a
      *                      fines de trazabilidad de errores
@@ -139,6 +144,9 @@ void os_init(void)  {
 
     NVIC_SetPriority(PendSV_IRQn, (1 << __NVIC_PRIO_BITS)-1);
 
+    // idle task must be automatically initialized
+    os_init_idle_task();
+
     os_controller.state = OS_STATE_RESET;
     os_controller.current_task = NULL;
     os_controller.next_task = NULL;
@@ -161,24 +169,46 @@ os_error os_get_last_error(void)    {
      *  @brief Funcion que efectua las decisiones de scheduling.
      *
      *  @details
-     *   Segun el criterio al momento de desarrollo, determina que tarea debe ejecutarse luego, y
-     *   por lo tanto provee los punteros correspondientes para el cambio de contexto. Esta
-     *   implementacion de scheduler es muy sencilla, del tipo Round-Robin
+     *   Round-Robin scheduling.
      *
      *  @param      None.
      *  @return     None.
 ***************************************************************************************************/
 static void scheduler(void)  {
-    uint8_t index;      //variable auxiliar para legibilidad
+    uint8_t index;
+    uint8_t iterated_tasks = 0;
 
     if (os_controller.state == OS_STATE_RESET)	{
-        os_controller.current_task = (os_task*) os_controller.task_list[0];
+        // consider the possibility of having no tasks
+        if (os_controller.number_of_tasks > 0)  {
+            os_controller.current_task = (os_task*) os_controller.task_list[0];
+        }
+        else    {
+            os_controller.current_task = &idle_task_instance;
+        }
     }
     else	{
-        index = (os_controller.current_task->id + 1) % os_controller.number_of_tasks;
-        os_controller.next_task = (os_task*) os_controller.task_list[index];
-    }
+        index = os_controller.current_task->id;
 
+        while (iterated_tasks < os_controller.number_of_tasks)  {
+            // iterate over all the valid task IDs until a READY/RUNNING task is found
+            index = (index + 1) % os_controller.number_of_tasks;
+
+            if(((os_task*)(os_controller.task_list[index]))->state != OS_TASK_BLOCKED)  {
+                os_controller.next_task = (os_task*) os_controller.task_list[index];
+                break;
+            }
+
+            iterated_tasks++;
+        }
+
+        // all tasks are blocked, so the idle task must be run
+        if (iterated_tasks == os_controller.number_of_tasks)    {
+            os_controller.next_task = &idle_task_instance;
+        }
+
+
+    }
 }
 
 
@@ -187,9 +217,8 @@ static void scheduler(void)  {
      *  @brief SysTick Handler.
      *
      *  @details
-     *   El handler del Systick no debe estar a la vista del usuario. En este handler se llama al
-     *   scheduler y luego de determinarse cual es la tarea siguiente a ejecutar, se setea como
-     *   pendiente la excepcion PendSV.
+     *   En este handler se llama al scheduler y luego de determinarse cual es la tarea siguiente
+     *   a ejecutar, se setea como pendiente la excepcion PendSV.
      *
      *  @param      None.
      *  @return     None.
@@ -214,6 +243,8 @@ void SysTick_Handler(void)  {
      * completed before next instruction is executed
      */
     __DSB();
+
+    os_tick_hook();
 }
 
 
@@ -240,7 +271,12 @@ uint32_t get_next_context(uint32_t current_stack_pointer)  {
     }
     else {
         os_controller.current_task->stack_pointer = current_stack_pointer;
-        os_controller.current_task->state = OS_TASK_READY;
+    
+        // only go to READY if the task was RUNNING
+        // if it was BLOCKED, it should stay BLOCKED
+        if (os_controller.current_task->state == OS_TASK_RUNNING)   {
+            os_controller.current_task->state = OS_TASK_READY;
+        }
 
         next_stack_pointer = os_controller.next_task->stack_pointer;
 
@@ -249,4 +285,25 @@ uint32_t get_next_context(uint32_t current_stack_pointer)  {
     }
 
     return next_stack_pointer;
+}
+
+
+/*************************************************************************************************
+     *  @brief Inicializa Idle Task.
+     *
+***************************************************************************************************/
+void os_init_idle_task()    {
+
+    idle_task_instance.stack[STACK_SIZE/4 - XPSR]    = INIT_XPSR;                    //necesario para bit thumb
+    idle_task_instance.stack[STACK_SIZE/4 - PC_REG]  = (uint32_t)idle_task;          //direccion de la tarea (ENTRY_POINT)
+    idle_task_instance.stack[STACK_SIZE/4 - LR]      = (uint32_t)os_return_hook;     //Retorno de la tarea (no deberia darse)
+
+    idle_task_instance.stack[STACK_SIZE/4 - R0]      = (uint32_t)NULL;               //parametro de la tarea
+
+    idle_task_instance.stack[STACK_SIZE/4 - LR_PREV_VALUE] = EXEC_RETURN;
+    idle_task_instance.stack_pointer = (uint32_t)(idle_task_instance.stack + STACK_SIZE/4 - FULL_STACKING_SIZE);
+
+    idle_task_instance.entry_point = idle_task;
+    idle_task_instance.id = IDLE_TASK_ID;
+    idle_task_instance.state = OS_TASK_READY;
 }

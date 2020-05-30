@@ -71,6 +71,7 @@
 typedef enum    {
     OS_TASK_READY,
     OS_TASK_RUNNING,
+    OS_TASK_BLOCKED,
 } os_task_state;
 
 typedef enum    {
