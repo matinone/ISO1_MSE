@@ -75,7 +75,7 @@ void __attribute__((weak)) error_hook(void *caller)  {
      *  @brief Inicializa las tareas del OS.
      *
 ***************************************************************************************************/
-os_error os_init_task(void* entry_point, os_task* task, void* task_param, uint8_t priority) {
+os_error os_init_task(task_function entry_point, os_task* task, void* task_param, uint8_t priority) {
 
     static uint8_t id = 0;
 
@@ -171,7 +171,7 @@ static void scheduler(void)  {
         // consider the possibility of having no tasks
         if (os_controller.number_of_tasks > 0)  {
             // task_list is ordered, so the first task will have the higher priority
-            os_controller.current_task = (os_task*) os_controller.task_list[0];
+            os_controller.current_task = os_controller.task_list[0];
         }
         else    {
             os_controller.current_task = &idle_task_instance;
@@ -190,9 +190,9 @@ static void scheduler(void)  {
             while (priority_iterated_tasks < os_controller.tasks_per_priority[current_priority])    {
                 real_index = index_per_priority[current_priority] + index_offset;
 
-                if(((os_task*)(os_controller.task_list[real_index]))->state != OS_TASK_BLOCKED)  {
+                if(((os_controller.task_list[real_index]))->state != OS_TASK_BLOCKED)  {
                     // select next task and update the index, so the same task is not chosen again the next time
-                    os_controller.next_task = (os_task*) os_controller.task_list[real_index];
+                    os_controller.next_task = os_controller.task_list[real_index];
                     index_per_priority[current_priority] = (index_per_priority[current_priority] + 1) % os_controller.tasks_per_priority[current_priority];
                     break;  // break inner while
                 }
@@ -309,12 +309,12 @@ static void os_init_idle_task()    {
 ***************************************************************************************************/
 static void os_order_task_priority()    {
     // really inefficient bubble sort ( O(N^2) )
-    void* swap_variable;
+    os_task* swap_variable;
 
     for (uint8_t i=0; i < os_controller.number_of_tasks - 1; i++)  {
         for (uint8_t j=0; j < os_controller.number_of_tasks - i - 1; j++)   {
 
-            if (((os_task*)(os_controller.task_list[j]))->priority > ((os_task*)(os_controller.task_list[j+1]))->priority)  {
+            if (((os_controller.task_list[j]))->priority > ((os_controller.task_list[j+1]))->priority)  {
                 swap_variable = os_controller.task_list[j];
                 os_controller.task_list[j] = os_controller.task_list[j+1];
                 os_controller.task_list[j+1] = swap_variable;

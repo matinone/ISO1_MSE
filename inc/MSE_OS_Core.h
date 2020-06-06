@@ -55,6 +55,9 @@
 
 //----------------------------------------------------------------------------------
 
+// function pointer with the prototype of a task function
+typedef void (* task_function) (void *);
+
 typedef enum    {
     OS_TASK_READY,
     OS_TASK_RUNNING,
@@ -75,14 +78,14 @@ typedef enum    {
 typedef struct  {
     uint32_t        stack[STACK_SIZE/4];
     uint32_t        stack_pointer;
-    void*           entry_point;
+    task_function   entry_point;
     uint8_t         id;
     os_task_state   state;
     uint8_t         priority;
 } os_task;
 
 typedef struct  {
-    void*       task_list[OS_MAX_TASK];
+    os_task*    task_list[OS_MAX_TASK];
     uint8_t     number_of_tasks;
     uint8_t     tasks_per_priority[OS_N_PRIORITY];
     os_error    last_error;
@@ -94,7 +97,7 @@ typedef struct  {
 
 //----------------------------------------------------------------------------------
 
-os_error os_init_task(void* entry_point, os_task* task, void* task_param, uint8_t priority);
+os_error os_init_task(task_function entry_point, os_task* task, void* task_param, uint8_t priority);
 
 void os_init(void);
 
