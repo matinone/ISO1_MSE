@@ -71,9 +71,9 @@ int main(void)  {
 
     initHardware();
 
-    os_init_task(task_1, &instance_os_task_1, (void*)5);
-    os_init_task(task_2, &instance_os_task_2, NULL);
-    os_init_task(task_3, &instance_os_task_3, NULL);
+    os_init_task(task_1, &instance_os_task_1, (void*)5, 2);
+    os_init_task(task_2, &instance_os_task_2, NULL, 1);
+    os_init_task(task_3, &instance_os_task_3, NULL, 0);
 
     os_init();
 

@@ -48,6 +48,11 @@
 
 #define OS_MAX_TASK                 8
 
+#define OS_MAX_PRIORITY             0   // maximum priority for a task
+#define OS_MIN_PRIORITY             3   // minimum priority for a task
+#define OS_N_PRIORITY               (OS_MIN_PRIORITY - OS_MAX_PRIORITY + 1)
+#define OS_IDLE_PRIORITY            (OS_MIN_PRIORITY + 1)     // idle task priority lower than the lowest priority
+
 //----------------------------------------------------------------------------------
 
 typedef enum    {
@@ -62,8 +67,9 @@ typedef enum    {
 } os_state;
 
 typedef enum    {
-    OS_OK               = 0,
-    OS_ERROR_MAX_TASK   = 255,
+    OS_OK                   = 0x00,
+    OS_ERROR_MAX_TASK       = 0x01,
+    OS_ERROR_MAX_PRIORITY   = 0x02,
 } os_error;
 
 typedef struct  {
@@ -72,11 +78,13 @@ typedef struct  {
     void*           entry_point;
     uint8_t         id;
     os_task_state   state;
+    uint8_t         priority;
 } os_task;
 
 typedef struct  {
     void*       task_list[OS_MAX_TASK];
     uint8_t     number_of_tasks;
+    uint8_t     tasks_per_priority[OS_N_PRIORITY];
     os_error    last_error;
     os_state    state;
     os_task*    current_task;
@@ -86,7 +94,7 @@ typedef struct  {
 
 //----------------------------------------------------------------------------------
 
-os_error os_init_task(void* entry_point, os_task* task, void* task_param);
+os_error os_init_task(void* entry_point, os_task* task, void* task_param, uint8_t priority);
 
 void os_init(void);
 
