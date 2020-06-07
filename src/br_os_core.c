@@ -1,11 +1,11 @@
 /*
- * MSE_OS_Core.c
+ * br_os_core.c
  *
  *  Created on: 2020
  *      Author: mbrignone
  */
 
-#include "MSE_OS_Core.h"
+#include "br_os_core.h"
 
 #define IDLE_TASK_ID    0xFF
 

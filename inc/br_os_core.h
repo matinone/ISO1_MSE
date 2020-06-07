@@ -1,12 +1,12 @@
 /*
- * MSE_OS_Core.h
+ * br_os_core.h
  *
  *  Created on: 2020
  *      Author: mbrignone
  */
 
-#ifndef __MSE_OS_CORE_H__
-#define __MSE_OS_CORE_H__
+#ifndef __BR_OS_CORE_H__
+#define __BR_OS_CORE_H__
 
 #include <stdint.h>
 #include "board.h"
@@ -104,4 +104,4 @@ void os_init(void);
 os_error os_get_last_error(void);
 
 
-#endif  // __MSE_OS_CORE_H__
+#endif  // __BR_OS_CORE_H__
