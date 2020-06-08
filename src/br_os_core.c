@@ -153,6 +153,15 @@ os_error os_get_last_error(void)    {
 }
 
 
+/*************************************************************************************************
+     *  @brief Funcion del sistema operativo para obtener la tarea
+     *  actualmente en ejecucion.
+     *
+***************************************************************************************************/
+os_task* os_get_current_task(void)  {
+    return os_controller.current_task;
+}
+
 
 /*************************************************************************************************
      *  @brief Funcion que efectua las decisiones de scheduling.
@@ -189,6 +198,12 @@ static void scheduler(void)  {
             // iterate over all the tasks of the current priority
             while (priority_iterated_tasks < os_controller.tasks_per_priority[current_priority])    {
                 real_index = index_per_priority[current_priority] + index_offset;
+
+                // update the task state if it was blocked because of a delay that has already finished
+                if(os_controller.task_list[real_index]->state == OS_TASK_BLOCKED &&
+                os_controller.task_list[real_index]->remaining_blocked_ticks == 0)  {
+                    os_controller.task_list[real_index]->state = OS_TASK_READY;
+                }
 
                 if(((os_controller.task_list[real_index]))->state != OS_TASK_BLOCKED)  {
                     // select next task and update the index, so the same task is not chosen again the next time
@@ -231,6 +246,13 @@ static void scheduler(void)  {
      *
 ***************************************************************************************************/
 void SysTick_Handler(void)  {
+
+    // update the remaining blocked ticks for all the corresponding tasks
+    for (uint8_t i; i<os_controller.number_of_tasks; i++)   {
+        if (os_controller.task_list[i]->remaining_blocked_ticks > 0)    {
+            os_controller.task_list[i]->remaining_blocked_ticks--;
+        }
+    }
 
     scheduler();
 
@@ -321,4 +343,24 @@ static void os_order_task_priority()    {
             }
         }
     }
+}
+
+/*************************************************************************************************
+     *  @brief Se fuerza a una ejecución del scheduler.
+     *
+***************************************************************************************************/
+void os_cpu_yield(void) {
+    // this is the same code executed in the scheduler() function
+
+    // set the corresponding bit for PendSV exception
+    SCB->ICSR = SCB_ICSR_PENDSVSET_Msk;
+
+    // Instruction Synchronization Barrier: flushes the pipeline and ensures that
+    // all previous instructions are completed before executing new instructions
+    __ISB();
+
+    // Data Synchronization Barrier: ensures that all memory accesses are
+    // completed before next instruction is executed
+    __DSB();
+
 }

@@ -82,6 +82,7 @@ typedef struct  {
     uint8_t         id;
     os_task_state   state;
     uint8_t         priority;
+    uint32_t        remaining_blocked_ticks;
 } os_task;
 
 typedef struct  {
@@ -102,6 +103,10 @@ os_error os_init_task(task_function entry_point, os_task* task, void* task_param
 void os_init(void);
 
 os_error os_get_last_error(void);
+
+os_task* os_get_current_task(void);
+
+void os_cpu_yield(void);
 
 
 #endif  // __BR_OS_CORE_H__
