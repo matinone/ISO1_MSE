@@ -199,12 +199,6 @@ static void scheduler(void)  {
             while (priority_iterated_tasks < os_controller.tasks_per_priority[current_priority])    {
                 real_index = index_per_priority[current_priority] + index_offset;
 
-                // update the task state if it was blocked because of a delay that has already finished
-                if(os_controller.task_list[real_index]->state == OS_TASK_BLOCKED &&
-                os_controller.task_list[real_index]->remaining_blocked_ticks == 0)  {
-                    os_controller.task_list[real_index]->state = OS_TASK_READY;
-                }
-
                 if(((os_controller.task_list[real_index]))->state != OS_TASK_BLOCKED)  {
                     // select next task and update the index, so the same task is not chosen again the next time
                     os_controller.next_task = os_controller.task_list[real_index];
@@ -251,6 +245,17 @@ void SysTick_Handler(void)  {
     for (uint8_t i; i<os_controller.number_of_tasks; i++)   {
         if (os_controller.task_list[i]->remaining_blocked_ticks > 0)    {
             os_controller.task_list[i]->remaining_blocked_ticks--;
+
+            // update the task state if the remaining ticks are 0
+            // it must be done here to avoid updating the state if it was
+            // blocked for another reason
+            if(os_controller.task_list[i]->state == OS_TASK_BLOCKED &&
+            os_controller.task_list[i]->remaining_blocked_ticks == 0)  {
+
+                os_controller.task_list[i]->state = OS_TASK_READY;
+            }
+
+
         }
     }
 
