@@ -249,13 +249,10 @@ void SysTick_Handler(void)  {
             // update the task state if the remaining ticks are 0
             // it must be done here to avoid updating the state if it was
             // blocked for another reason
-            if(os_controller.task_list[i]->state == OS_TASK_BLOCKED &&
-            os_controller.task_list[i]->remaining_blocked_ticks == 0)  {
+            if (os_controller.task_list[i]->state == OS_TASK_BLOCKED && os_controller.task_list[i]->remaining_blocked_ticks == 0)    {
 
                 os_controller.task_list[i]->state = OS_TASK_READY;
             }
-
-
         }
     }
 
@@ -355,7 +352,9 @@ static void os_order_task_priority()    {
      *
 ***************************************************************************************************/
 void os_cpu_yield(void) {
-    // this is the same code executed in the scheduler() function
+    // this is the same code executed in the SysTick handler
+
+	scheduler();
 
     // set the corresponding bit for PendSV exception
     SCB->ICSR = SCB_ICSR_PENDSVSET_Msk;

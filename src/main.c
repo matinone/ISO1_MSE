@@ -1,10 +1,11 @@
 /*==================[inclusions]=============================================*/
 
 #include "main.h"
-
 #include "board.h"
+#include "sapi.h"
 
 #include "br_os_core.h"
+#include "br_os_api.h"
 
 
 /*==================[macros and definitions]=================================*/
@@ -35,33 +36,38 @@ static void initHardware(void)  {
 /*============================================================================*/
 
 void task_1(void* task_param)  {
-    uint32_t i = 0;
-    uint32_t j = 0;
 
-    uint32_t increment = (uint32_t)task_param;
+    uint32_t task_delay = (uint32_t)task_param;
+
     while (1) {
-        i = i + increment;
-        j++;
+        gpioWrite(LED1, true);
+        os_delay(task_delay);
+        gpioWrite(LED1, false);
+        os_delay(task_delay);
     }
 }
 
 void task_2(void* task_param)  {
-    uint32_t k = 0;
-    uint32_t l = 0;
+
+    uint32_t task_delay = (uint32_t)task_param;
+
     while (1) {
-        k++;
-        l++;
+        gpioWrite(LED2, true);
+        os_delay(task_delay);
+        gpioWrite(LED2, false);
+        os_delay(task_delay);
     }
 }
 
 void task_3(void* task_param)  {
-    uint32_t m = 0;
-    uint32_t n = 0;
-    float f = 0.0;
+
+    uint32_t task_delay = (uint32_t)task_param;
+
     while (1) {
-        m++;
-        n++;
-        f = f + 1.5;
+        gpioWrite(LED3, true);
+        os_delay(task_delay);
+        gpioWrite(LED3, false);
+        os_delay(task_delay);
     }
 }
 
@@ -71,9 +77,9 @@ int main(void)  {
 
     initHardware();
 
-    os_init_task(task_1, &instance_os_task_1, (void*)5, 2);
-    os_init_task(task_2, &instance_os_task_2, NULL, 1);
-    os_init_task(task_3, &instance_os_task_3, NULL, 0);
+    os_init_task(task_1, &instance_os_task_1, (void*)1000, 2);
+    os_init_task(task_2, &instance_os_task_2, (void*)500, 1);
+    os_init_task(task_3, &instance_os_task_3, (void*)250, 0);
 
     os_init();
 
