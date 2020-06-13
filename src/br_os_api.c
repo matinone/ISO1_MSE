@@ -44,6 +44,7 @@ void os_semaphore_init(os_semaphore* semaphore) {
      *  ticks_to_wait = 0 significa que no hay timeout y se queda esperando por siempre
      *  hasta que el semaforo este libre.
      *
+     * Retorna true si se pudo tomar el semaforo, false si expiro el timeout.
 ***************************************************************************************************/
 bool os_semaphore_take(os_semaphore* semaphore, uint32_t ticks_to_wait)   {
 
