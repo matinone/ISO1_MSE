@@ -30,6 +30,13 @@ static void os_order_task_priority();
 
 
 /*************************************************************************************************
+     *  @brief Setea PendSV.
+     *
+***************************************************************************************************/
+static void os_set_pendsv();
+
+
+/*************************************************************************************************
      *  @brief Idle task.
      *
 ***************************************************************************************************/
@@ -231,6 +238,9 @@ static void scheduler(void)  {
 
 
     }
+
+    // set PendSV exception to do the context switch after scheduling
+    os_set_pendsv();
 }
 
 
@@ -257,17 +267,6 @@ void SysTick_Handler(void)  {
     }
 
     scheduler();
-
-    // set the corresponding bit for PendSV exception
-    SCB->ICSR = SCB_ICSR_PENDSVSET_Msk;
-
-    // Instruction Synchronization Barrier: flushes the pipeline and ensures that
-    // all previous instructions are completed before executing new instructions
-    __ISB();
-
-    // Data Synchronization Barrier: ensures that all memory accesses are
-    // completed before next instruction is executed
-    __DSB();
 
     os_tick_hook();
 }
@@ -352,10 +351,12 @@ static void os_order_task_priority()    {
      *
 ***************************************************************************************************/
 void os_cpu_yield(void) {
-    // this is the same code executed in the SysTick handler
+    // just call the scheduler
+    scheduler();
+}
 
-	scheduler();
 
+static void os_set_pendsv() {
     // set the corresponding bit for PendSV exception
     SCB->ICSR = SCB_ICSR_PENDSVSET_Msk;
 
@@ -366,5 +367,4 @@ void os_cpu_yield(void) {
     // Data Synchronization Barrier: ensures that all memory accesses are
     // completed before next instruction is executed
     __DSB();
-
 }
