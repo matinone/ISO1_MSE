@@ -18,13 +18,26 @@ typedef struct  {
 } os_semaphore;
 
 
+typedef struct  {
+    os_task*    associated_task;
+    uint8_t     data[MAX_QUEUE_SIZE_BYTES];
+    uint16_t    element_size;
+    uint16_t    front;
+    uint16_t    back;
+
+} os_queue;
+
+
 void os_delay(uint32_t ticks);
 
 void os_semaphore_init(os_semaphore* semaphore);
-// returns true if the semaphore was obtained, false if the timeout expired
 bool os_semaphore_take(os_semaphore* semaphore, uint32_t ticks_to_wait);
 void os_semaphore_give(os_semaphore* semaphore);
 
+void os_queue_init(os_queue* queue, uint16_t element_size);
+void os_queue_send(os_queue* queue, void* data);
+void os_queue_receive(os_queue* queue, void* data);
+// void os_queue_get_max_elements(os_queue* queue);
 
 
 #endif  // __BR_OS_API_H__

@@ -9,6 +9,7 @@
 #define __BR_OS_CORE_H__
 
 #include <stdint.h>
+#include <string.h>
 #include "board.h"
 
 
@@ -52,6 +53,9 @@
 #define OS_MIN_PRIORITY             3   // minimum priority for a task
 #define OS_N_PRIORITY               (OS_MIN_PRIORITY - OS_MAX_PRIORITY + 1)
 #define OS_IDLE_PRIORITY            (OS_MIN_PRIORITY + 1)     // idle task priority lower than the lowest priority
+
+// #define MAX_QUEUE_SIZE_BYTES        64
+#define MAX_QUEUE_SIZE_BYTES        16   // 4 uint32_t values
 
 //----------------------------------------------------------------------------------
 

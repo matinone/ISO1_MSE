@@ -16,6 +16,7 @@
 
 os_task instance_os_task_1, instance_os_task_2, instance_os_task_3, instance_os_task_4;
 os_semaphore sem_task_1, sem_task_2, sem_task_3;
+os_queue queue_task_4;
 
 
 /*==================[internal functions declaration]=========================*/
@@ -38,14 +39,15 @@ static void initHardware(void)  {
 
 void task_1(void* task_param)  {
 
-    uint32_t task_delay = (uint32_t)task_param;
+    // uint32_t task_delay = (uint32_t)task_param;
+    uint32_t data;
 
     while (1) {
-        os_semaphore_take(&sem_task_1, NO_TIMEOUT);
+        os_queue_receive(&queue_task_4, &data);
         gpioWrite(LED1, true);
-        os_delay(task_delay);
+        os_delay(data);
         gpioWrite(LED1, false);
-        // os_delay(task_delay);
+        os_delay(data);
     }
 }
 
@@ -87,10 +89,17 @@ void task_3(void* task_param)  {
 void task_4(void* task_param)  {
 
     // uint32_t task_delay = (uint32_t)task_param;
+    uint32_t num = 500;
+
 
     while (1) {
+
         if (!gpioRead(TEC1))    {
-            os_semaphore_give(&sem_task_1);
+        	os_queue_send(&queue_task_4, &num);
+            // os_semaphore_give(&sem_task_1);
+            os_delay(250);
+
+            num = (num + 500) % 3000;
         }
 
         if (!gpioRead(TEC2))    {
@@ -117,6 +126,8 @@ int main(void)  {
     os_semaphore_init(&sem_task_1);
     os_semaphore_init(&sem_task_2);
     os_semaphore_init(&sem_task_3);
+
+    os_queue_init(&queue_task_4, sizeof(uint32_t));
 
     os_init();
 

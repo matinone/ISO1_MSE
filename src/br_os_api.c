@@ -29,7 +29,7 @@ void os_delay(uint32_t ticks)   {
 
 
 /*************************************************************************************************
-	 *  @brief Inicializa un semaforo biario
+	 *  @brief Inicializa un semaforo binario.
      *
 ***************************************************************************************************/
 void os_semaphore_init(os_semaphore* semaphore) {
@@ -100,5 +100,84 @@ void os_semaphore_give(os_semaphore* semaphore) {
         semaphore->taken = false;
         semaphore->associated_task->state = OS_TASK_READY;
         semaphore->associated_task->remaining_blocked_ticks = 0;
+    }
+}
+
+
+/*************************************************************************************************
+	 *  @brief Inicializa una cola.
+     * 
+     *
+***************************************************************************************************/
+void os_queue_init(os_queue* queue, uint16_t element_size) {
+    queue->element_size     = element_size;
+    queue->associated_task  = NULL;
+    queue->front            = 0;
+    queue->back             = 0;
+}
+
+
+/*************************************************************************************************
+	 *  @brief Coloca un dato en una cola.
+     *
+***************************************************************************************************/
+void os_queue_send(os_queue* queue, void* data) {
+
+    uint16_t total_elements = MAX_QUEUE_SIZE_BYTES / queue->element_size;
+    os_task* current_task   = os_get_current_task();
+
+    if (current_task->state == OS_TASK_RUNNING) {
+
+        // if there was a task blocked waiting to receive an element from an empty queue,
+        // it must go to the READY state if the queue is not empty anymore
+        if (queue->front == queue->back && queue->associated_task != NULL) {
+            if (queue->associated_task->state == OS_TASK_BLOCKED)   {
+                queue->associated_task->state = OS_TASK_READY;
+            }
+        }
+
+        // block until the queue has space
+        while ((queue->front+1) % total_elements == queue->back)    {
+            current_task->state     = OS_TASK_BLOCKED;
+            queue->associated_task  = current_task;
+            // force scheduling
+            os_cpu_yield();
+        }
+
+        // if the queue has enough space, copy the data to the
+        // corresponding block of memory inside the queue data
+        memcpy(queue->data + queue->front *  queue->element_size, data, queue->element_size);
+        queue->front = (queue->front + 1) % total_elements;
+        queue->associated_task = NULL;
+    }
+}
+
+
+void os_queue_receive(os_queue* queue, void* data)  {
+
+    uint16_t total_elements = MAX_QUEUE_SIZE_BYTES / queue->element_size;
+    os_task* current_task   = os_get_current_task();
+
+    if (current_task->state == OS_TASK_RUNNING) {
+
+        // if there was a task blocked waiting to send an element to a full queue,
+        // it must go to the READY state if the queue has space now
+        if ((queue->front+1) % total_elements == queue->back && queue->associated_task != NULL) {
+            if (queue->associated_task->state == OS_TASK_BLOCKED)   {
+                queue->associated_task->state = OS_TASK_READY;
+            }
+        }
+
+        // block until the queue is not empty
+        while (queue->front == queue->back)    {
+            current_task->state     = OS_TASK_BLOCKED;
+            queue->associated_task  = current_task;
+            // force scheduling
+            os_cpu_yield();
+        }
+
+        memcpy(data, queue->data + queue->back *  queue->element_size, queue->element_size);
+        queue->back = (queue->back + 1) % total_elements;
+        queue->associated_task = NULL;
     }
 }
