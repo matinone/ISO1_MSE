@@ -96,7 +96,7 @@ void task_4(void* task_param)  {
     while (1) {
 
         if (!gpioRead(TEC1))    {
-        	os_queue_send(&queue_task_4, &num);
+            os_queue_send(&queue_task_4, &num);
             // os_semaphore_give(&sem_task_1);
             os_delay(250);
 

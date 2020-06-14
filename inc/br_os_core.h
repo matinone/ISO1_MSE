@@ -98,20 +98,21 @@ typedef struct  {
     os_state    state;
     os_task*    current_task;
     os_task*    next_task;
+    int16_t     current_critical_sections;
 } os_control;
 
 
 //----------------------------------------------------------------------------------
 
 os_error os_init_task(task_function entry_point, os_task* task, void* task_param, uint8_t priority);
-
 void os_init(void);
 
 os_error os_get_last_error(void);
-
 os_task* os_get_current_task(void);
 
 void os_cpu_yield(void);
+void os_enter_critical_section(void);
+void os_exit_critical_section(void);
 
 
 #endif  // __BR_OS_CORE_H__

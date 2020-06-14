@@ -51,6 +51,10 @@ PendSV_Handler:
     * se hace el push de los registros de FPU restantes
     */
 
+    /////////////////////////// INIT CRITICAL SECTION ///////////////////////////
+
+    cpsid i                 // disable interrupts globally
+
     tst lr,0x10
     it eq
     vpusheq {s16-s31}
@@ -59,7 +63,7 @@ PendSV_Handler:
     mrs r0,msp
     bl get_next_context
     msr msp,r0
-    pop {r4-r11,lr}         //Recuperados todos los valores de registros
+    pop {r4-r11,lr}         // recuperados todos los valores de registros
 
 
     /*
@@ -72,4 +76,8 @@ PendSV_Handler:
     it eq
     vpopeq {s16-s31}
 
-    bx lr                   //se hace un branch indirect con el valor de LR que es nuevamente EXEC_RETURN
+    cpsie i                 // enable interrupts globally
+
+    /////////////////////////// END CRITICAL SECTION ///////////////////////////
+
+    bx lr                   // se hace un branch indirect con el valor de LR que es nuevamente EXEC_RETURN

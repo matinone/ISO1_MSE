@@ -138,6 +138,7 @@ void os_init(void)  {
     os_controller.state = OS_STATE_RESET;
     os_controller.current_task = NULL;
     os_controller.next_task = NULL;
+    os_controller.current_critical_sections = 0;
 
     for (uint8_t i=0; i<OS_MAX_TASK; i++)	{
         if (i >= os_controller.number_of_tasks)	{
@@ -367,4 +368,27 @@ static void os_set_pendsv() {
     // Data Synchronization Barrier: ensures that all memory accesses are
     // completed before next instruction is executed
     __DSB();
+}
+
+
+/*************************************************************************************************
+     *  @brief Inidica el inicio de una seccion critica, en la que las interrupciones no
+     *  estan habilitadas, para garantizar que las operaciones sean atomicas.
+     *
+***************************************************************************************************/
+inline void os_enter_critical_section(void)    {
+    __disable_irq();
+    os_controller.current_critical_sections++;
+}
+
+
+/*************************************************************************************************
+     *  @brief Inidica el fin de una seccion critica.
+     *
+***************************************************************************************************/
+inline void os_exit_critical_section(void)  {
+    os_controller.current_critical_sections--;
+    if (os_controller.current_critical_sections <= 0)   {
+        __enable_irq();
+    }
 }

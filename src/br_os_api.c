@@ -15,15 +15,21 @@
 ***************************************************************************************************/
 void os_delay(uint32_t ticks)   {
 
-    os_task* current_task = os_get_current_task();
+    os_task* current_task;
 
-    if (current_task->state == OS_TASK_RUNNING && ticks > 0)    {
+    if (ticks > 0)  {
+
+        os_enter_critical_section();
+
+        current_task = os_get_current_task();
         current_task->state = OS_TASK_BLOCKED;
         current_task->remaining_blocked_ticks = ticks;
+
+        os_exit_critical_section();
+
         // force scheduling to go out of the delayed task
         os_cpu_yield();
     }
-
 }
 
 
