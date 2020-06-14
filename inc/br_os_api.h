@@ -28,15 +28,15 @@ typedef struct  {
 } os_queue;
 
 
-void os_delay(uint32_t ticks);
+os_error os_delay(uint32_t ticks);
 
 void os_semaphore_init(os_semaphore* semaphore);
 bool os_semaphore_take(os_semaphore* semaphore, uint32_t ticks_to_wait);
 void os_semaphore_give(os_semaphore* semaphore);
 
 bool os_queue_init(os_queue* queue, uint16_t element_size);
-void os_queue_send(os_queue* queue, void* data);
-void os_queue_receive(os_queue* queue, void* data);
+bool os_queue_send(os_queue* queue, void* data);
+bool os_queue_receive(os_queue* queue, void* data);
 
 
 #endif  // __BR_OS_API_H__

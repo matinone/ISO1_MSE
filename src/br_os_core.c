@@ -87,13 +87,12 @@ os_error os_init_task(task_function entry_point, os_task* task, void* task_param
     static uint8_t id = 0;
 
     if (priority > OS_MIN_PRIORITY) {
-        os_controller.last_error = OS_ERROR_MAX_PRIORITY;
-        error_hook(os_init_task);
+        os_set_error(OS_ERROR_MAX_PRIORITY, os_init_task);
         return OS_ERROR_MAX_PRIORITY;
     }
     else if (os_controller.number_of_tasks >= OS_MAX_TASK)  {
-        os_controller.last_error = OS_ERROR_MAX_TASK;   // reached the maximum number of tasks
-        error_hook(os_init_task);
+        // reached the maximum number of tasks
+        os_set_error(OS_ERROR_MAX_TASK, os_init_task);
         return OS_ERROR_MAX_TASK;
     }
     else    {
@@ -135,10 +134,11 @@ void os_init(void)  {
     // idle task must be automatically initialized
     os_init_idle_task();
 
-    os_controller.state = OS_STATE_RESET;
-    os_controller.current_task = NULL;
-    os_controller.next_task = NULL;
+    os_controller.state                     = OS_STATE_RESET;
+    os_controller.current_task              = NULL;
+    os_controller.next_task                 = NULL;
     os_controller.current_critical_sections = 0;
+    os_controller.schedule_from_isr         = false;
 
     for (uint8_t i=0; i<OS_MAX_TASK; i++)	{
         if (i >= os_controller.number_of_tasks)	{
@@ -148,6 +148,16 @@ void os_init(void)  {
 
     // order all the tasks inside the OS controller based on their priorities
     os_order_task_priority();
+}
+
+
+/*************************************************************************************************
+     *  @brief Setea un error del OS y llama al error hook.
+     *
+***************************************************************************************************/
+void os_set_error(os_error error, void* caller)   {
+    os_controller.last_error = error;
+    error_hook(caller);
 }
 
 
@@ -168,6 +178,44 @@ os_error os_get_last_error(void)    {
 ***************************************************************************************************/
 os_task* os_get_current_task(void)  {
     return os_controller.current_task;
+}
+
+
+/*************************************************************************************************
+     *  @brief Devuelve el estado actual del OS.
+     *
+***************************************************************************************************/
+os_state os_get_global_state(void)  {
+    return os_controller.state;
+}
+
+
+/*************************************************************************************************
+     *  @brief Setea el estado del OS.
+     *
+**************************************************************************************************/
+void os_set_global_state(os_state state)    {
+    os_controller.state = state;
+}
+
+
+/*************************************************************************************************
+     *  @brief Setea la bandera del OS para indicar que se debe llamar al scheduler
+     *  luego de haber atendido una interrupcion.
+     *
+**************************************************************************************************/
+void os_set_scheduler_from_isr(bool value)  {
+    os_controller.schedule_from_isr = value;
+}
+
+
+/*************************************************************************************************
+     *  @brief Devuelve la bandera del OS que indica si se debe llamar al scheduler
+     *  luego de haber atendido una interrupcion.
+     *
+**************************************************************************************************/
+bool os_get_scheduler_from_isr(void)    {
+    return os_controller.schedule_from_isr;
 }
 
 

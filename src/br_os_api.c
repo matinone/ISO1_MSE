@@ -13,9 +13,15 @@
      *  @brief Delay en unidades de tick del OS.
      *
 ***************************************************************************************************/
-void os_delay(uint32_t ticks)   {
+os_error os_delay(uint32_t ticks)   {
 
     os_task* current_task;
+
+    // cannot call a delay from an ISR
+    if (os_get_global_state() == OS_STATE_ISR)  {
+        os_set_error(OS_ERROR_DELAY_FROM_ISR, os_delay);
+        return OS_ERROR_DELAY_FROM_ISR;
+    }
 
     if (ticks > 0)  {
 
@@ -30,12 +36,14 @@ void os_delay(uint32_t ticks)   {
         // force scheduling to go out of the delayed task
         os_cpu_yield();
     }
+
+    return OS_OK;
 }
 
 
 
 /*************************************************************************************************
-	 *  @brief Inicializa un semaforo binario.
+     *  @brief Inicializa un semaforo binario.
      *
 ***************************************************************************************************/
 void os_semaphore_init(os_semaphore* semaphore) {
@@ -45,7 +53,7 @@ void os_semaphore_init(os_semaphore* semaphore) {
 
 
 /*************************************************************************************************
-	 *  @brief Se toma un semaforo. La tarea queda bloqueada hasta que el semaforo este libre
+     *  @brief Se toma un semaforo. La tarea queda bloqueada hasta que el semaforo este libre
      *  o hasta que transcurra el timeout (ticks_to_wait).
      *  ticks_to_wait = 0 significa que no hay timeout y se queda esperando por siempre
      *  hasta que el semaforo este libre.
@@ -92,7 +100,7 @@ bool os_semaphore_take(os_semaphore* semaphore, uint32_t ticks_to_wait)   {
 
 
 /*************************************************************************************************
-	 *  @brief Se libera un semaforo.
+     *  @brief Se libera un semaforo.
      *
 ***************************************************************************************************/
 void os_semaphore_give(os_semaphore* semaphore) {
@@ -106,12 +114,17 @@ void os_semaphore_give(os_semaphore* semaphore) {
         semaphore->taken = false;
         semaphore->associated_task->state = OS_TASK_READY;
         semaphore->associated_task->remaining_blocked_ticks = 0;
+
+        // if called from an ISR, a new scheduling is required
+        if (os_get_global_state() == OS_STATE_ISR)    {
+            os_set_scheduler_from_isr(true);
+        }
     }
 }
 
 
 /*************************************************************************************************
-	 *  @brief Inicializa una cola.
+     *  @brief Inicializa una cola.
      * 
      * Retorna true si se pudo crear la cola, false si el tamaño del
      * elemento es mayor al maximo que puede almacenar la cola.
@@ -132,10 +145,10 @@ bool os_queue_init(os_queue* queue, uint16_t element_size) {
 
 
 /*************************************************************************************************
-	 *  @brief Coloca un dato en una cola.
+     *  @brief Coloca un dato en una cola.
      *
 ***************************************************************************************************/
-void os_queue_send(os_queue* queue, void* data) {
+bool os_queue_send(os_queue* queue, void* data) {
 
     uint16_t total_elements = MAX_QUEUE_SIZE_BYTES / queue->element_size;
     os_task* current_task   = os_get_current_task();
@@ -147,7 +160,18 @@ void os_queue_send(os_queue* queue, void* data) {
         if (queue->current_elements == 0 && queue->associated_task != NULL) {
             if (queue->associated_task->state == OS_TASK_BLOCKED)   {
                 queue->associated_task->state = OS_TASK_READY;
+
+                // if called from an ISR, a new scheduling is required
+                if (os_get_global_state() == OS_STATE_ISR)    {
+                    os_set_scheduler_from_isr(true);
+                }
             }
+        }
+
+        // the operation must be canceled if trying to send data
+        // to a full queue from an ISR (cannot block inside an ISR)
+        if (os_get_global_state() == OS_STATE_ISR && queue->current_elements == total_elements)  {
+            return false;
         }
 
         // block until the queue has space
@@ -165,10 +189,16 @@ void os_queue_send(os_queue* queue, void* data) {
         queue->associated_task = NULL;
         queue->current_elements++;
     }
+
+    return true;
 }
 
 
-void os_queue_receive(os_queue* queue, void* data)  {
+/*************************************************************************************************
+     *  @brief Lee un dato de una cola.
+     *
+***************************************************************************************************/
+bool os_queue_receive(os_queue* queue, void* data)  {
 
     uint16_t total_elements = MAX_QUEUE_SIZE_BYTES / queue->element_size;
     os_task* current_task   = os_get_current_task();
@@ -180,7 +210,18 @@ void os_queue_receive(os_queue* queue, void* data)  {
         if (queue->current_elements == total_elements && queue->associated_task != NULL) {
             if (queue->associated_task->state == OS_TASK_BLOCKED)   {
                 queue->associated_task->state = OS_TASK_READY;
+
+                // if called from an ISR, a new scheduling is required
+                if (os_get_global_state() == OS_STATE_ISR)    {
+                    os_set_scheduler_from_isr(true);
+                }
             }
+        }
+
+        // the operation must be canceled if trying to receive data
+        // from an empty queue from an ISR (cannot block inside an ISR)
+        if (os_get_global_state() == OS_STATE_ISR && queue->current_elements == 0)  {
+            return false;
         }
 
         // block until the queue is not empty
@@ -196,4 +237,6 @@ void os_queue_receive(os_queue* queue, void* data)  {
         queue->associated_task = NULL;
         queue->current_elements--;
     }
+
+    return true;
 }

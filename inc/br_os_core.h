@@ -71,6 +71,7 @@ typedef enum    {
 typedef enum    {
     OS_STATE_NORMAL,
     OS_STATE_RESET,
+    OS_STATE_ISR,
 } os_state;
 
 typedef enum    {
@@ -78,6 +79,8 @@ typedef enum    {
     OS_ERROR_MAX_TASK       = 0x01,
     OS_ERROR_MAX_PRIORITY   = 0x02,
     OS_ERROR_TIMEOUT        = 0x03,
+    OS_ERROR_DELAY_FROM_ISR = 0x04,
+    OS_ERROR_GENERIC        = 0xFF,
 } os_error;
 
 typedef struct  {
@@ -99,6 +102,7 @@ typedef struct  {
     os_task*    current_task;
     os_task*    next_task;
     int16_t     current_critical_sections;
+    bool        schedule_from_isr;
 } os_control;
 
 
@@ -107,8 +111,15 @@ typedef struct  {
 os_error os_init_task(task_function entry_point, os_task* task, void* task_param, uint8_t priority);
 void os_init(void);
 
+void os_set_error(os_error error, void* caller);
 os_error os_get_last_error(void);
 os_task* os_get_current_task(void);
+
+os_state os_get_global_state(void);
+void os_set_global_state(os_state state);
+
+void os_set_scheduler_from_isr(bool value);
+bool os_get_scheduler_from_isr(void);
 
 void os_cpu_yield(void);
 void os_enter_critical_section(void);
