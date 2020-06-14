@@ -107,13 +107,21 @@ void os_semaphore_give(os_semaphore* semaphore) {
 /*************************************************************************************************
 	 *  @brief Inicializa una cola.
      * 
-     *
+     * Retorna true si se pudo crear la cola, false si el tamaño del
+     * elemento es mayor al maximo que puede almacenar la cola.
 ***************************************************************************************************/
-void os_queue_init(os_queue* queue, uint16_t element_size) {
+bool os_queue_init(os_queue* queue, uint16_t element_size) {
+    if (element_size > MAX_QUEUE_SIZE_BYTES)    {
+        return false;
+    }
+
     queue->element_size     = element_size;
     queue->associated_task  = NULL;
     queue->front            = 0;
     queue->back             = 0;
+    queue->current_elements = 0;
+
+    return true;
 }
 
 
@@ -130,14 +138,14 @@ void os_queue_send(os_queue* queue, void* data) {
 
         // if there was a task blocked waiting to receive an element from an empty queue,
         // it must go to the READY state if the queue is not empty anymore
-        if (queue->front == queue->back && queue->associated_task != NULL) {
+        if (queue->current_elements == 0 && queue->associated_task != NULL) {
             if (queue->associated_task->state == OS_TASK_BLOCKED)   {
                 queue->associated_task->state = OS_TASK_READY;
             }
         }
 
         // block until the queue has space
-        while ((queue->front+1) % total_elements == queue->back)    {
+        while (queue->current_elements == total_elements) {
             current_task->state     = OS_TASK_BLOCKED;
             queue->associated_task  = current_task;
             // force scheduling
@@ -149,6 +157,7 @@ void os_queue_send(os_queue* queue, void* data) {
         memcpy(queue->data + queue->front *  queue->element_size, data, queue->element_size);
         queue->front = (queue->front + 1) % total_elements;
         queue->associated_task = NULL;
+        queue->current_elements++;
     }
 }
 
@@ -162,14 +171,14 @@ void os_queue_receive(os_queue* queue, void* data)  {
 
         // if there was a task blocked waiting to send an element to a full queue,
         // it must go to the READY state if the queue has space now
-        if ((queue->front+1) % total_elements == queue->back && queue->associated_task != NULL) {
+        if (queue->current_elements == total_elements && queue->associated_task != NULL) {
             if (queue->associated_task->state == OS_TASK_BLOCKED)   {
                 queue->associated_task->state = OS_TASK_READY;
             }
         }
 
         // block until the queue is not empty
-        while (queue->front == queue->back)    {
+        while (queue->current_elements == 0)    {
             current_task->state     = OS_TASK_BLOCKED;
             queue->associated_task  = current_task;
             // force scheduling
@@ -179,5 +188,6 @@ void os_queue_receive(os_queue* queue, void* data)  {
         memcpy(data, queue->data + queue->back *  queue->element_size, queue->element_size);
         queue->back = (queue->back + 1) % total_elements;
         queue->associated_task = NULL;
+        queue->current_elements--;
     }
 }

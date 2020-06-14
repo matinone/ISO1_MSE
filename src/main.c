@@ -40,9 +40,10 @@ static void initHardware(void)  {
 void task_1(void* task_param)  {
 
     // uint32_t task_delay = (uint32_t)task_param;
-    uint32_t data;
+    uint32_t data = 500;
 
     while (1) {
+        //os_semaphore_take(&sem_task_1, NO_TIMEOUT);
         os_queue_receive(&queue_task_4, &data);
         gpioWrite(LED1, true);
         os_delay(data);

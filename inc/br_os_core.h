@@ -77,6 +77,7 @@ typedef enum    {
     OS_OK                   = 0x00,
     OS_ERROR_MAX_TASK       = 0x01,
     OS_ERROR_MAX_PRIORITY   = 0x02,
+    OS_ERROR_TIMEOUT        = 0x03,
 } os_error;
 
 typedef struct  {
