@@ -54,8 +54,7 @@
 #define OS_N_PRIORITY               (OS_MIN_PRIORITY - OS_MAX_PRIORITY + 1)
 #define OS_IDLE_PRIORITY            (OS_MIN_PRIORITY + 1)     // idle task priority lower than the lowest priority
 
-// #define MAX_QUEUE_SIZE_BYTES        64
-#define MAX_QUEUE_SIZE_BYTES        16   // 4 uint32_t values
+#define MAX_QUEUE_SIZE_BYTES        64
 
 //----------------------------------------------------------------------------------
 
@@ -103,6 +102,7 @@ typedef struct  {
     os_task*    next_task;
     int16_t     current_critical_sections;
     bool        schedule_from_isr;
+    uint32_t    system_time;
 } os_control;
 
 
@@ -114,6 +114,7 @@ void os_init(void);
 void os_set_error(os_error error, void* caller);
 os_error os_get_last_error(void);
 os_task* os_get_current_task(void);
+uint32_t os_get_current_time(void);
 
 os_state os_get_global_state(void);
 void os_set_global_state(os_state state);

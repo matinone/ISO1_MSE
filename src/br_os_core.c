@@ -139,6 +139,7 @@ void os_init(void)  {
     os_controller.next_task                 = NULL;
     os_controller.current_critical_sections = 0;
     os_controller.schedule_from_isr         = false;
+    os_controller.system_time               = 0;
 
     for (uint8_t i=0; i<OS_MAX_TASK; i++)	{
         if (i >= os_controller.number_of_tasks)	{
@@ -180,6 +181,14 @@ os_task* os_get_current_task(void)  {
     return os_controller.current_task;
 }
 
+
+/*************************************************************************************************
+     *  @brief Devuelve el tiempo transcurrido (en ticks) desde que se inicio el OS.
+     *
+***************************************************************************************************/
+uint32_t os_get_current_time(void)  {
+    return os_controller.system_time;
+}
 
 /*************************************************************************************************
      *  @brief Devuelve el estado actual del OS.
@@ -299,6 +308,9 @@ static void scheduler(void)  {
      *
 ***************************************************************************************************/
 void SysTick_Handler(void)  {
+
+    // update system time
+    os_controller.system_time++;
 
     // update the remaining blocked ticks for all the corresponding tasks
     for (uint8_t i; i<os_controller.number_of_tasks; i++)   {
