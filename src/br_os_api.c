@@ -155,6 +155,23 @@ bool os_queue_send(os_queue* queue, void* data) {
 
     if (current_task->state == OS_TASK_RUNNING) {
 
+        // the operation must be canceled if trying to send data
+        // to a full queue from an ISR (cannot block inside an ISR)
+        if (os_get_global_state() == OS_STATE_ISR && queue->current_elements == total_elements)  {
+            return false;
+        }
+
+        // block until the queue has space
+        while (queue->current_elements == total_elements) {
+            os_enter_critical_section();
+            current_task = os_get_current_task();
+            current_task->state     = OS_TASK_BLOCKED;
+            queue->associated_task  = current_task;
+            os_exit_critical_section();
+            // force scheduling
+            os_cpu_yield();
+        }
+
         // if there was a task blocked waiting to receive an element from an empty queue,
         // it must go to the READY state if the queue is not empty anymore
         if (queue->current_elements == 0 && queue->associated_task != NULL) {
@@ -166,20 +183,6 @@ bool os_queue_send(os_queue* queue, void* data) {
                     os_set_scheduler_from_isr(true);
                 }
             }
-        }
-
-        // the operation must be canceled if trying to send data
-        // to a full queue from an ISR (cannot block inside an ISR)
-        if (os_get_global_state() == OS_STATE_ISR && queue->current_elements == total_elements)  {
-            return false;
-        }
-
-        // block until the queue has space
-        while (queue->current_elements == total_elements) {
-            current_task->state     = OS_TASK_BLOCKED;
-            queue->associated_task  = current_task;
-            // force scheduling
-            os_cpu_yield();
         }
 
         // if the queue has enough space, copy the data to the
@@ -205,6 +208,23 @@ bool os_queue_receive(os_queue* queue, void* data)  {
 
     if (current_task->state == OS_TASK_RUNNING) {
 
+        // the operation must be canceled if trying to receive data
+        // from an empty queue from an ISR (cannot block inside an ISR)
+        if (os_get_global_state() == OS_STATE_ISR && queue->current_elements == 0)  {
+            return false;
+        }
+
+        // block until the queue is not empty
+        while (queue->current_elements == 0)    {
+            os_enter_critical_section();
+            current_task = os_get_current_task();
+            current_task->state     = OS_TASK_BLOCKED;
+            queue->associated_task  = current_task;
+            os_exit_critical_section();
+            // force scheduling
+            os_cpu_yield();
+        }
+
         // if there was a task blocked waiting to send an element to a full queue,
         // it must go to the READY state if the queue has space now
         if (queue->current_elements == total_elements && queue->associated_task != NULL) {
@@ -216,20 +236,6 @@ bool os_queue_receive(os_queue* queue, void* data)  {
                     os_set_scheduler_from_isr(true);
                 }
             }
-        }
-
-        // the operation must be canceled if trying to receive data
-        // from an empty queue from an ISR (cannot block inside an ISR)
-        if (os_get_global_state() == OS_STATE_ISR && queue->current_elements == 0)  {
-            return false;
-        }
-
-        // block until the queue is not empty
-        while (queue->current_elements == 0)    {
-            current_task->state     = OS_TASK_BLOCKED;
-            queue->associated_task  = current_task;
-            // force scheduling
-            os_cpu_yield();
         }
 
         memcpy(data, queue->data + queue->back *  queue->element_size, queue->element_size);
